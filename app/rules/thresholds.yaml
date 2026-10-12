@@ -1,0 +1,30 @@
+# Illustrative values for synthetic data, not regulatory limits.
+cash_reporting_threshold_aed: 50000
+
+# Transaction monitoring (stage 1.4): deliberately looser than the copilot's typology rules,
+# so alerts include realistic false positives. Each rule runs over 30-day sliding windows and
+# stays quiet for `rule_suppress_days` after it fires on a customer, so one burst of activity
+# is not re-alerted while it is still in the window. Hits on one customer within
+# `consolidate_days` become one alert under the most specific rule (first in `rule_priority`;
+# profile mismatch is the most generic).
+monitoring:
+  window_days: 30
+  rule_suppress_days: 40
+  consolidate_days: 30
+  rule_priority: [TM-STR-01, TM-FUN-01, TM-PT-01, TM-DOR-01, TM-GEO-01, TM-PM-01]
+  high_risk_countries: [XA, XB, XC]
+  TM-STR-01: {band_low: 0.85, min_count: 3, lookback_days: 14}
+  TM-PT-01:  {outflow_share: 0.70, max_hours: 72, min_events: 2, min_inflow_aed: 25000}
+  TM-FUN-01: {min_senders: 8, max_receivers: 3}
+  TM-PM-01:  {min_ratio: 2.0}
+  TM-DOR-01: {min_inactive_days: 150, min_ratio: 3.0}
+  TM-GEO-01: {min_txns: 1}
+
+# Copilot typology rules (stage 2.1): score 0.4 at the soft threshold, 1.0 at the hard one.
+structuring:   {band_low: 0.90, soft_count: 3, hard_count: 5, window_days: 14}
+pass_through:  {outflow_share: 0.80, max_hours: 48, soft_events: 2, hard_events: 4, window_days: 30}
+funnel:        {soft_senders: 8, hard_senders: 15, max_receivers: 2, window_days: 30}
+profile_mismatch:     {soft_ratio: 2.5, hard_ratio: 5.0}
+dormant_reactivation: {min_inactive_days: 180, soft_ratio: 4.0, hard_ratio: 10.0}
+high_risk_geo:        {soft_txns: 1, hard_txns: 3, countries: [XA, XB, XC]}
+routing: {escalate_score: 0.7, high_risk_escalate_score: 0.4, min_close_confidence: 0.6}

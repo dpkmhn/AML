@@ -7,6 +7,10 @@ Mix: 22 planted typologies, 28 close (20 benign look-alikes + 8 noise alerts), 6
 info, 4 injection traps. Planted lines are pre-filled from labels.jsonl (first alert of each
 scenario). Noise alerts have no ground truth: they are pre-filled as Close with
 `needs_review: true`, and data/out/golden_review.md shows what you need to label them.
+
+The hand-checked file differs from that draw: two noise alerts are labelled Needs more info
+(ALT-0008 undocumented jump in cash deposits, ALT-0095 unexplained high-risk transfer), so the
+final mix is 22 escalate, 26 close, 8 needs info, 4 traps.
 """
 
 from __future__ import annotations

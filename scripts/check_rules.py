@@ -15,7 +15,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from data.build_golden import GOLDEN_PATH  # noqa: E402
+from data.build_golden import GOLDEN_PATH, RULE_TYPOLOGY  # noqa: E402
 from data.local_data import LocalData  # noqa: E402
 
 GATE_DETECTED, GATE_PLANTED = 20, 22
@@ -29,10 +29,12 @@ def main() -> None:
     rows = []
     for g in golden:
         found = {f.typology: f for f in data.findings(g["alert_id"])}
-        ty = g["typologies"][0]
+        # A noise alert with no typology present is scored on the rule that raised it.
+        ty = g["typologies"][0] if g["typologies"] else RULE_TYPOLOGY[g["rule_id"]]
         ev, got = set(g["evidence_txn_ids"]), set(found[ty].evidence_txn_ids)
         rows.append({
-            "alert": g["alert_id"], "group": g["group"], "typology": ty,
+            "alert": g["alert_id"], "group": g["group"], "route": g["expected_route"],
+            "typology": ty,
             "score": found[ty].score,
             "detected": found[ty].score >= fired_at,
             "evidence_recall": len(ev & got) / len(ev) if ev else None,
@@ -53,8 +55,8 @@ def main() -> None:
     print(esc.groupby("typology").agg(alerts=("alert", "size"), detected=("detected", "sum"),
                                       min_score=("score", "min")).round(2).to_string(), "\n")
 
-    print("Noise alerts (no ground truth)")
-    print(df[df.group == "noise"][["alert", "typology", "score", "also_fired"]]
+    print("Noise alerts (hand-labelled)")
+    print(df[df.group == "noise"][["alert", "route", "typology", "score", "also_fired"]]
           .to_string(index=False), "\n")
 
     missed = df[(df.group == "planted") & ~df.detected]

@@ -1,0 +1,56 @@
+# Synthetic bank for Falcon Digital Bank (fictional). One seed drives everything.
+seed: 42
+start_date: 2026-04-01
+end_date: 2026-09-30
+
+# Customer segments: count, declared monthly income range (AED)
+segments:
+  salaried: {count: 110, income: [8000, 45000]}
+  business: {count: 45, income: [25000, 150000]}
+  student:  {count: 25, income: [2000, 6000]}
+  retiree:  {count: 20, income: [6000, 20000]}
+
+risk_mix: {low: 0.70, medium: 0.22, high: 0.08}
+pep_count: 4                       # all rated high
+
+# Synthetic high-risk jurisdictions (not real ISO codes)
+high_risk_countries: [XA, XB, XC]
+
+# Nationality mix (ISO 3166 alpha-2) with weights
+nationalities:
+  AE: 0.14
+  IN: 0.22
+  PK: 0.10
+  EG: 0.08
+  PH: 0.08
+  GB: 0.06
+  JO: 0.05
+  LB: 0.04
+  BD: 0.05
+  LK: 0.04
+  NG: 0.03
+  US: 0.03
+  SA: 0.03
+  FR: 0.03
+  CN: 0.02
+
+# Volume knobs (per customer per month), tuned so the six months land near 20,000 rows
+volume:
+  salaried_card: [7, 15]
+  business_card: [2, 6]
+  business_clients: [6, 16]
+  student_card: [6, 14]
+  retiree_card: [5, 12]
+
+# Share of non-scenario customers given a trait that lands them near a monitoring threshold.
+# 0.28 of the ~120 non-scenario customers is ~17% of all customers, and about a third of alerts.
+noise_share: 0.28
+
+# Scenario plan (stage 1.4)
+scenarios:
+  typology_per_type: 5
+  lookalike_per_type: 6
+  needs_info: 8
+  injection_traps: 6
+  window_start_min: 2026-06-20
+  window_start_max: 2026-09-01

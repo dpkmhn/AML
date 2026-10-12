@@ -20,9 +20,16 @@ monitoring:
   TM-DOR-01: {min_inactive_days: 150, min_ratio: 3.0}
   TM-GEO-01: {min_txns: 1}
 
+# Copilot feature windows (stage 2.1). Monitoring fires on the first day a rule trips, so the
+# activity often continues after the alert window. The analyst reviews up to `review_lag_days`
+# after the window end, and judges it against the `baseline_days` before the window.
+features: {review_lag_days: 30, baseline_days: 90}
+
 # Copilot typology rules (stage 2.1): score 0.4 at the soft threshold, 1.0 at the hard one.
+# Each windowed rule takes the best `window_days` span inside the review window.
 structuring:   {band_low: 0.90, soft_count: 3, hard_count: 5, window_days: 14}
-pass_through:  {outflow_share: 0.80, max_hours: 48, soft_events: 2, hard_events: 4, window_days: 30}
+pass_through:  {outflow_share: 0.80, max_hours: 48, soft_events: 2, hard_events: 4, window_days: 30,
+                min_inflow_aed: 20000}
 funnel:        {soft_senders: 8, hard_senders: 15, max_receivers: 2, window_days: 30}
 profile_mismatch:     {soft_ratio: 2.5, hard_ratio: 5.0}
 dormant_reactivation: {min_inactive_days: 180, soft_ratio: 4.0, hard_ratio: 10.0}

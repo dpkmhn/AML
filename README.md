@@ -11,6 +11,8 @@ uv sync
 copy .env.example .env          # then fill in OPENAI_API_KEY and model names
 docker compose up -d            # Postgres 16 + pgvector
 uv run python -m data.generator.generate --reset
+uv run python -m data.build_golden     # 60-alert golden set + data/out/golden_review.md
+uv run python scripts/check_rules.py   # typology rules on the golden alerts
 uv run pytest
 ```
 

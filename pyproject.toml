@@ -1,0 +1,50 @@
+[project]
+name = "aml-triage-copilot"
+version = "0.1.0"
+description = "AML alert triage copilot: rules decide, the LLM explains, a human approves."
+readme = "README.md"
+authors = [
+    { name = "Deepak", email = "deepakmhn1@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "faker>=40.43.0",
+    "fastapi>=0.143.0",
+    "httpx>=0.28.1",
+    "langchain-openai>=1.7.0",
+    "langgraph>=1.2.14",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "numpy>=2.5.4",
+    "openai>=3.29.0",
+    "pandas>=3.0.6",
+    "pgvector>=0.5.1",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.15.0",
+    "pyyaml>=6.0.3",
+    "scikit-learn>=1.9.1",
+    "sqlalchemy>=2.1.4",
+    "streamlit>=1.65.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.0",
+]

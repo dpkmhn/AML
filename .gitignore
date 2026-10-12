@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+data/out/*
+!data/out/.gitkeep
+evals/results/*.json
+.ipynb_checkpoints/

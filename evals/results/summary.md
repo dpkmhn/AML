@@ -26,6 +26,7 @@ Cost and latency cover the case up to the analyst review.
 | 20261013102431 ref-pos-note-fix | v3 | gpt-6-luna | route=rules | 0 | 90% (54/60) | 0 | 51% (322/636) | 66% (160/244) | 0 of 4 | $0.0026 | 33.6 / 70.1 | 0 |
 | 20261013104602 rules-criteria | v3 | gpt-6-luna | route=rules | 0 | 88% (53/60) | 0 | 51% (326/638) | 66% (157/239) | 0 of 4 | $0.0024 | 33.6 / 58.2 | 0 |
 | 20261013104605 exp-route-llm-v2 | v3 | gpt-6-luna | route=llm | 0 | 77% (46/60) | 6 | 51% (330/646) | 67% (159/238) | 0 of 4 | $0.0037 | 41.2 / 85.3 | 0 |
+| 20261013112344 v1-reference | v3 | gpt-6-luna | route=rules | 0 | 92% (55/60) | 0 | 51% (328/641) | 66% (157/237) | 0 of 4 | $0.0025 | 34.5 / 61.9 | 0 |
 <!-- /runs -->
 
 ## Confusion matrices
@@ -166,6 +167,15 @@ golden \ routed        close  needs_info    escalate
 close                     16           4           6
 needs_info                 0           4           4
 escalate                   0           0          26
+```
+
+### 20261013112344 v1-reference
+
+```
+golden \ routed        close  needs_info    escalate
+close                     22           4           0
+needs_info                 0           7           0
+escalate                   0           1          26
 ```
 
 <!-- /matrices -->

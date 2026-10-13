@@ -18,6 +18,12 @@ Cost and latency cover the case up to the analyst review.
 | 202610130927 fix3-pm-evidence | v2 | gpt-6-luna | route=rules | 0 | 75% (45/60) | 3 | 54% (327/604) | 67% (172/257) | 0 of 4 | $0.0025 | 34.3 / 62.4 | 0 |
 | 202610130934 fix4-prompt-v3 | v3 | gpt-6-luna | route=rules | 0 | 93% (56/60) | 2 | 50% (330/655) | 66% (156/235) | 0 of 4 | $0.0025 | 37.7 / 66.7 | 0 |
 | 202610130943 fix4-prompt-v3-rerun | v3 | gpt-6-luna | route=rules | 0 | 90% (54/60) | 2 | 52% (328/626) | 66% (163/246) | 0 of 4 | $0.0024 | 35.6 / 59.0 | 0 |
+| 20261013095333 ref-3 | v3 | gpt-6-luna | route=rules | 0 | 93% (56/60) | 0 | 51% (326/645) | 67% (155/232) | 0 of 4 | $0.0024 | 34.1 / 63.2 | 0 |
+| 20261013095342 ref-4 | v3 | gpt-6-luna | route=rules | 0 | 92% (55/60) | 1 | 51% (329/648) | 66% (157/239) | 0 of 4 | $0.0024 | 33.6 / 60.4 | 0 |
+| 20261013095526 exp-route-llm | v3 | gpt-6-luna | route=llm | 0 | 68% (41/60) | 13 | 50% (329/662) | 66% (156/238) | 0 of 4 | $0.0036 | 39.2 / 89.7 | 0 |
+| 20261013095336 exp-rag-off | v3 | gpt-6-luna | route=rules, rag-filter off | 0 | 90% (54/60) | 1 | 53% (329/620) | 65% (160/247) | 0 of 4 | $0.0024 | 32.0 / 56.9 | 0 |
+| 20261013101250 exp-refs-raw-v2 | v3 | gpt-6-luna | route=rules, references raw | 0 | 92% (55/60) | 1 | 49% (330/668) | 67% (159/236) | 0 of 4 | $0.0022 | 29.7 / 51.9 | 0 |
+| 20261013102431 ref-pos-note-fix | v3 | gpt-6-luna | route=rules | 0 | 90% (54/60) | 0 | 51% (322/636) | 66% (160/244) | 0 of 4 | $0.0026 | 33.6 / 70.1 | 0 |
 <!-- /runs -->
 
 ## Confusion matrices
@@ -88,4 +94,104 @@ needs_info                 0           8           0
 escalate                   0           0          26
 ```
 
+### 20261013095333 ref-3
+
+```
+golden \ routed        close  needs_info    escalate
+close                     22           4           0
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
+### 20261013095342 ref-4
+
+```
+golden \ routed        close  needs_info    escalate
+close                     21           4           1
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
+### 20261013095526 exp-route-llm
+
+```
+golden \ routed        close  needs_info    escalate
+close                     10           3          13
+needs_info                 0           5           3
+escalate                   0           0          26
+```
+
+### 20261013095336 exp-rag-off
+
+```
+golden \ routed        close  needs_info    escalate
+close                     20           5           1
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
+### 20261013101250 exp-refs-raw-v2
+
+```
+golden \ routed        close  needs_info    escalate
+close                     21           4           1
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
+### 20261013102431 ref-pos-note-fix
+
+```
+golden \ routed        close  needs_info    escalate
+close                     20           6           0
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
 <!-- /matrices -->
+
+## Experiments (stage 4.3, 2026-10-13)
+
+Each experiment changes one flag from the reference configuration: `gpt-6-luna` for
+assess_case and the narrative, prompt v3, rules decide, filtered retrieval, quoted references.
+Counts are out of 60 alerts (26 golden Escalate, 26 Close, 8 Needs more info, 4 traps).
+
+**Run-to-run spread of the reference (4 identical runs: fix4-prompt-v3, fix4-prompt-v3-rerun,
+ref-3, ref-4):** route accuracy 54 to 56 of 60 (90% to 93%); missed escalations 0 in all four;
+false escalations 0 to 2; traps failed 0 in all four; cost $0.0024 to $0.0025 per alert; p95
+latency 59 to 67 s. Treat a difference of 2 or fewer routed cases as noise.
+
+| Experiment | Flag | Missed esc. | Route acc. | False esc. | Traps failed | Other | Reading |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Reference (4 runs) | none | 0 | 54 to 56 | 0 to 2 | 0 of 4 | citation 66% to 67%; $0.0024/alert | |
+| Rules vs LLM decides | `--route-mode llm` | 0 | 41 | 13 | 0 of 4 | $0.0036/alert, p95 90 s | The LLM missed nothing but escalated 13 Close cases, 10 citing "several typologies together" (written criterion 4) or criterion 1 read strictly. Rules are more accurate and cheaper; both kept every escalation. |
+| Small vs strong model | `--model strong` | not run | | | | | Dropped: the project uses `gpt-6-luna` only (gpt-4.1 is no longer used), so there is no second model to compare. The run launched as exp-strong was a fourth reference run and is recorded as ref-4. |
+| RAG filter on vs off | `--rag-filter off` | 0 | 54 | 1 | 0 of 4 | retrieved off-typology chunks 38 of 335 (0 of 307 with the filter); cited 0 | Within noise on every route metric. The filter keeps wrong-typology guidance out of the prompt; luna ignored it when present. Citation accuracy is set by profile-mismatch co-firing, not by retrieval. |
+| Quoted vs raw references | `--references raw` | 0 | 55 | 1 | 0 of 4 | 0 assessment check failures | Within noise. No trap produced a benign explanation from the injected text; luna named the injected reference as a red flag in 3 of 4 traps (not ALT-0023), and all 4 still escalated through R1. |
+
+The first raw-references run (`exp-refs-raw`, 39 of 60) is not used: raw mode then sent only ID,
+amount and reference, dropping dates and counterparties, so it measured missing data rather than
+injection. Fixed in `app/guard.py` with a test; `exp-refs-raw-v2` is the valid run.
+
+**Raw references, with rules deciding.** Injected text could only move the route by getting the
+model to offer a benign explanation the router accepts. That did not happen with luna, so the
+stage 3.3 checks were not tested in anger: no assessment failed the ID or quote checks in either
+mode. They would still block the obvious attack: a quote must appear word for word in
+kyc_notes, and since stage 4.2 its transactions must cover half of the finding's amount, which
+a reference cannot change. The guard's value with this model is the analyst-facing flag, and that
+flag missed ALT-0060's "Note to AI reviewer ... no escalation needed" (no keyword match).
+
+**assess_case model: `gpt-6-luna`.** It is the only model the project uses. On the evidence:
+0 missed escalations and 90% to 93% route accuracy in four reference runs, at $0.0024 per alert.
+Against `gpt-4.1-mini` on prompt v1 (the only other model measured), it had half the cost, no
+false escalations against 4, and 1 failed trap against 2. The cost of the choice: it rejects
+temperature 0, so about 12% of cases can flip between identical runs, and p95 latency is about
+60 s per alert.
+
+**POS look-alike note fix (after the experiments).** The three POS look-alikes (ALT-0030,
+ALT-0050, ALT-0101) had a KYC note saying takings were "deposited weekly" while the generator
+banks them every one to three days. The note now states the real cadence and total
+(`data/generator/lookalikes.py`); transactions, alerts and labels are byte-identical and only
+four customers' `kyc_notes` changed (also updated in the database). Run `ref-pos-note-fix`:
+54 of 60, 0 missed, **0 false escalations**. The three now go to Needs more info on the
+profile-mismatch inflow the note does not cover: the co-firing problem in the next steps.

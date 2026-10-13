@@ -258,9 +258,13 @@ def print_report(r: dict[str, Any], cases: list[dict[str, Any]]) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tag", required=True, help="short run name, e.g. baseline")
+    ap.add_argument("--tag", help="short run name, e.g. baseline")
+    ap.add_argument("--summarize", type=Path, metavar="RESULTS_JSON",
+                    help="add a saved run to summary.md instead of running (for parallel runs)")
     ap.add_argument("--model", choices=["small", "strong"], default="small",
                     help="model for assess_case and draft_narrative")
+    ap.add_argument("--route-mode", choices=["rules", "llm"], default="rules",
+                    help="who picks the route: the routing rules or the model")
     ap.add_argument("--rag-filter", choices=["on", "off"], default="on")
     ap.add_argument("--references", choices=["quoted", "raw"], default="quoted")
     ap.add_argument("--alerts", nargs="+", help="only these golden alerts")
@@ -269,18 +273,26 @@ def main() -> None:
     ap.add_argument("--no-summary", action="store_true", help="do not touch summary.md")
     args = ap.parse_args()
 
+    if args.summarize:
+        saved = json.loads(args.summarize.read_text("utf-8"))
+        update_summary(saved["run"], saved["cases"])
+        print(f"Added {saved['run']['run_id']} {saved['run']['tag']} to {SUMMARY}")
+        return
+    if not args.tag:
+        ap.error("--tag is required")
     golden = load_golden()
     if args.alerts:
         golden = [g for g in golden if g["alert_id"] in set(args.alerts)]
     now = datetime.now(UTC)
-    run_id = now.strftime("%Y%m%d%H%M")
+    run_id = now.strftime("%Y%m%d%H%M%S")  # also in thread IDs: parallel runs must differ
     cfg = RunConfig(model=settings.model_strong if args.model == "strong" else settings.model_small,
                     prompt_version=settings.prompt_version, use_filter=args.rag_filter == "on",
-                    use_guard=args.references == "quoted")
+                    use_guard=args.references == "quoted", route_mode=args.route_mode)
     prices = load_prices()
     get_graph()  # build once, before the threads share it
     print(f"run {run_id} {args.tag}: {len(golden)} alerts, {cfg.model}, prompt "
-          f"v{cfg.prompt_version}, filter {args.rag_filter}, references {args.references}")
+          f"v{cfg.prompt_version}, filter {args.rag_filter}, references {args.references}, "
+          f"route {args.route_mode}")
 
     def one(g: dict[str, Any]) -> dict[str, Any]:
         r = run_case(g, run_id, cfg, not args.no_judge, prices)
@@ -294,8 +306,7 @@ def main() -> None:
         cases = sorted(pool.map(one, golden), key=lambda c: c["alert_id"])
 
     run = {"run_id": run_id, "tag": args.tag, "started": now.isoformat(),
-           "config": {**cfg.model_dump(), "route_mode": "rules",
-                      "judge_version": JUDGE_VERSION},
+           "config": {**cfg.model_dump(), "judge_version": JUDGE_VERSION},
            "prices_checked": str(yaml.safe_load((EVALS / "prices.yaml").read_text())["checked"])}
     r = report(cases, run_id)
     RESULTS.mkdir(exist_ok=True)

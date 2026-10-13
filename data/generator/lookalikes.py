@@ -28,9 +28,11 @@ def lookalike_structuring(ctx: Ctx, c: Customer, start: date) -> Plant:
         d += timedelta(days=ctx.randint(1, 3))
     total = sum(t["amount_aed"] for t in deps)
     if takings:
+        # the note describes the deposits as generated: every 1-3 days, AED 45,000 to 50,000
         _append_kyc(c, f"Seasonal peak: takings rise during Dubai Summer Surprises. Customer "
-                       f"provided POS Z-reports for {start:%b %Y} showing weekly cash sales "
-                       f"of AED 45,000 to 50,000, deposited weekly.")
+                       f"provided POS Z-reports for {start:%b %Y} showing peak cash sales of "
+                       f"AED {round(total, -3):,.0f} over two weeks; takings are banked every "
+                       f"one to three days, AED 45,000 to 50,000 at a time.")
         reason = "seasonal cash takings evidenced by POS reports"
     else:
         car, sold = ctx.choice(CARS), start - timedelta(days=ctx.randint(1, 3))

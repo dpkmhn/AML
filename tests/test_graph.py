@@ -17,7 +17,9 @@ from app.schemas import (
     CustomerProfile,
     Features,
     GuidanceChunk,
+    LlmRoute,
     RouteDecision,
+    RunConfig,
     Txn,
     TypologyFinding,
 )
@@ -135,3 +137,43 @@ def test_failing_node_writes_an_error_row(offline, monkeypatch):
         start(build_graph(InMemorySaver(serde=checkpoint_serde())), "ALT-0042")
     assert [r["step"] for r in offline.audit_rows] == ["load_alert", "get_profile"]
     assert "LookupError" in json.loads(offline.audit_rows[-1]["output"])["error"]
+
+
+# ---- stage 4.3: the "LLM decides" experiment ---------------------------------------------
+def llm_routing(offline, monkeypatch, route: LlmRoute | None):
+    """Answer assess_case from the FakeLLM and the route question with `route`."""
+    from app import llm
+
+    assess = offline.llm.parse
+
+    def parse(model, messages, schema):
+        if schema is LlmRoute:
+            offline.llm.calls.append({"kind": "route", "messages": list(messages)})
+            return route, route.model_dump_json() if route else "", llm.Usage(800, 50)
+        return assess(model, messages, schema)
+
+    monkeypatch.setattr(llm, "parse", parse)
+    graph = build_graph(InMemorySaver(serde=checkpoint_serde()))
+    cfg_ = RunConfig(model="m", prompt_version=settings.prompt_version, route_mode="llm")
+    graph.invoke({"case_id": "CASE-0001", "alert_id": "ALT-0042", "run_config": cfg_}, cfg())
+    return graph.get_state(cfg()).values
+
+
+def test_llm_route_mode_uses_the_models_route(offline, monkeypatch):
+    s = llm_routing(offline, monkeypatch, LlmRoute(route="close", reasons=["explained"]))
+    assert (s["route"].route, s["route"].rule_ids) == ("close", ["LLM"])
+    assert offline.case_writes[-1] == ("recommended", "close")
+    asked = [c for c in offline.llm.calls if c["kind"] == "route"]
+    assert len(asked) == 1 and "## Assessment" in asked[0]["messages"][1]["content"]
+    row = next(r for r in offline.audit_rows if r["step"] == "decide_route")
+    assert row["prompt_version"] == "route_llm_v1" and row["tokens_in"] == 800
+
+
+def test_llm_route_mode_unparsed_answer_is_needs_info(offline, monkeypatch):
+    s = llm_routing(offline, monkeypatch, None)
+    assert s["route"].route == "needs_info"
+
+
+def test_rules_mode_never_asks_for_a_route(offline):
+    start(build_graph(InMemorySaver(serde=checkpoint_serde())), "ALT-0042")
+    assert all(c["kind"] != "route" for c in offline.llm.calls)

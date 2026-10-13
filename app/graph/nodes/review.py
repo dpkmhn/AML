@@ -15,17 +15,18 @@ from pydantic import ValidationError
 
 from app import cases, llm
 from app.audit import audited, jsonable, record_usage
-from app.graph.nodes.assess import fired_typologies, run_config
+from app.graph.nodes.assess import build_user_message, fired_typologies, run_config
 from app.graph.pack import build_pack
 from app.graph.state import CaseState, review_txns
 from app.guard import quote_transactions
 from app.prompts import load_prompt, prompt_id
 from app.rules import routing
 from app.rules.monitoring import load_thresholds
-from app.schemas import AnalystDecision
+from app.schemas import AnalystDecision, LlmRoute, RouteDecision
 from app.validate import CHUNK_ID, TXN_ID
 
 NARRATIVE_PROMPT = "draft_narrative"
+ROUTE_PROMPT, ROUTE_PROMPT_VERSION = "route_llm", 1  # the experiment's prompt, versioned alone
 INTERNAL = "Internal: do not disclose to the customer"
 HEADINGS = ["Customer", "Trigger", "Checks performed", "Findings", "Conclusion and reason"]
 MAX_EVIDENCE_TXNS = 60
@@ -39,8 +40,29 @@ def decide_route(state: CaseState) -> CaseState:
         kyc_notes=p.kyc_notes,
         txn_amounts={t.txn_id: t.amount_aed for t in review_txns(state)},
         t=load_thresholds())
+    if run_config(state).route_mode == "llm":
+        route = llm_route(state, route)
     cases.set_recommended_route(state["case_id"], route.route)
     return {"route": route}
+
+
+def llm_route(state: CaseState, rules: RouteDecision) -> RouteDecision:
+    """Stage 4.3 experiment: the model picks the route from the same inputs. The rules'
+    fired and explained typologies are kept for comparison. If the answer does not parse, the
+    route is needs_info, as the rules do when they cannot decide."""
+    cfg = run_config(state)
+    block, _ = quote_transactions(review_txns(state), raw=not cfg.use_guard)
+    case = build_user_message(state, block)
+    assessment = state["assessment"].model_dump_json(indent=1)
+    messages = [{"role": "system", "content": load_prompt(ROUTE_PROMPT, ROUTE_PROMPT_VERSION)},
+                {"role": "user", "content": f"{case}\n\n## Assessment\n{assessment}"}]
+    parsed, _, usage = llm.parse(cfg.model, messages, LlmRoute)
+    record_usage(cfg.model, prompt_id(ROUTE_PROMPT, ROUTE_PROMPT_VERSION),
+                 usage.tokens_in, usage.tokens_out)
+    if parsed is None:
+        parsed = LlmRoute(route="needs_info", reasons=["The model's route did not parse."])
+    return rules.model_copy(update={"route": parsed.route, "rule_ids": ["LLM"],
+                                    "reasons": parsed.reasons})
 
 
 @audited("analyst_review")

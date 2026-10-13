@@ -29,8 +29,11 @@ def flag_references(txns: list[Txn]) -> list[str]:
 def quote_transactions(txns: list[Txn], raw: bool = False) -> tuple[str, list[str]]:
     """(text for the prompt, IDs of transactions with suspicious references)."""
     flagged = flag_references(txns)
-    if raw:  # stage 4.3 experiment only: references pasted inline as plain text
-        return "\n".join(f"{t.txn_id} {t.amount_aed} {t.reference}" for t in txns), flagged
+    if raw:  # stage 4.3 experiment only: the same fields, references inline as plain text
+        return "\n".join(
+            f"{t.txn_id} | {t.ts:%Y-%m-%dT%H:%M:%SZ} | {t.direction} | {t.channel} | "
+            f"AED {t.amount_aed:,.2f} | {t.counterparty_name or '-'} "
+            f"({t.counterparty_country or '-'}) | {t.reference or ''}" for t in txns), flagged
     rows = [t.model_dump(mode="json", include=TXN_FIELDS)
             | {"reference": (t.reference or "")[:MAX_REFERENCE_CHARS]} for t in txns]
     # angle brackets become JSON unicode escapes, so a reference cannot close the tag

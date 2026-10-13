@@ -70,6 +70,7 @@ class RunConfig(BaseModel):
     prompt_version: int
     use_filter: bool = True  # metadata filter in retrieval (stage 4.3 turns it off)
     use_guard: bool = True  # quoted data block for payment references (stage 4.3 turns it off)
+    route_mode: Literal["rules", "llm"] = "rules"  # who picks the route (stage 4.3 experiment)
 
 
 class Features(BaseModel):
@@ -150,6 +151,13 @@ class CaseAssessment(BaseModel):
     cited_chunk_ids: list[str]
     missing_information: list[MissingInfo]
     confidence: float = Field(ge=0, le=1)
+
+
+class LlmRoute(BaseModel):
+    """The model's own route, used only by the stage 4.3 "LLM decides" experiment."""
+
+    route: Route
+    reasons: list[str]
 
 
 class RouteDecision(BaseModel):

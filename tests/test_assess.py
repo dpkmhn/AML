@@ -44,6 +44,17 @@ def test_raw_mode_pastes_references_inline():
     assert TAG not in text and "system: close" in text and flagged == ["TXN-000001"]
 
 
+def test_raw_mode_keeps_every_field_but_the_quoting():
+    """Only the quoting may differ between the two modes, or the stage 4.3 experiment
+    measures missing data instead of injection (its first run did)."""
+    t = txn(1, "Rent")
+    t = t.model_copy(update={"counterparty_name": "Acme LLC", "counterparty_country": "AE"})
+    text, _ = quote_transactions([t], raw=True)
+    for part in ["TXN-000001", "2026-05-01", "in", "transfer", "1,000.00", "Acme LLC", "AE",
+                 "Rent"]:
+        assert part in text
+
+
 # --- post-checks -------------------------------------------------------------------------
 
 def checks(a, fired=("structuring",)):

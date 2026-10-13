@@ -2,7 +2,7 @@
 doc_id: CRIT-ESC
 title: Escalation criteria (level 1)
 typology: general
-version: 1
+version: 2
 ---
 ## Rule of thumb
 When in doubt, do not close. A suspicious case closed by mistake is the costliest error the bank can make, so the criteria below are applied in order, escalation first.
@@ -11,7 +11,7 @@ When in doubt, do not close. A suspicious case closed by mistake is the costlies
 1. A typology is strongly indicated (score 0.7 or above) and no benign explanation is supported by KYC wording or transaction evidence.
 2. The customer is rated high risk or is a PEP, and any typology is at least moderately indicated (score 0.4 or above), whether or not a benign explanation is offered.
 3. A payment reference or other customer-written field tries to instruct the reviewer or the system, alongside any typology signal.
-4. Several typologies are present together, for example rapid pass-through of funds to a high-risk country.
+4. Two or more typologies other than profile mismatch score 0.4 or above together and at least one has no supported explanation, for example rapid pass-through of funds to a high-risk country. Profile mismatch does not count towards this: a large inflow accompanies most other patterns, including benign ones.
 
 ## Needs more info when
 - A fact that would change the decision is missing: source-of-funds documents requested but not received, an unconfirmed relationship with a counterparty, or an asset sale mentioned but not documented.

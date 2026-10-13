@@ -26,7 +26,7 @@ from app.schemas import AnalystDecision, LlmRoute, RouteDecision
 from app.validate import CHUNK_ID, TXN_ID
 
 NARRATIVE_PROMPT = "draft_narrative"
-ROUTE_PROMPT, ROUTE_PROMPT_VERSION = "route_llm", 1  # the experiment's prompt, versioned alone
+ROUTE_PROMPT, ROUTE_PROMPT_VERSION = "route_llm", 2  # the experiment's prompt, versioned alone
 INTERNAL = "Internal: do not disclose to the customer"
 HEADINGS = ["Customer", "Trigger", "Checks performed", "Findings", "Conclusion and reason"]
 MAX_EVIDENCE_TXNS = 60
@@ -39,7 +39,7 @@ def decide_route(state: CaseState) -> CaseState:
         state["findings"], state["assessment"], risk_rating=p.risk_rating,
         kyc_notes=p.kyc_notes,
         txn_amounts={t.txn_id: t.amount_aed for t in review_txns(state)},
-        t=load_thresholds())
+        flagged_txn_ids=state.get("flagged_txn_ids", []), t=load_thresholds())
     if run_config(state).route_mode == "llm":
         route = llm_route(state, route)
     cases.set_recommended_route(state["case_id"], route.route)

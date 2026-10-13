@@ -166,7 +166,7 @@ def test_llm_route_mode_uses_the_models_route(offline, monkeypatch):
     asked = [c for c in offline.llm.calls if c["kind"] == "route"]
     assert len(asked) == 1 and "## Assessment" in asked[0]["messages"][1]["content"]
     row = next(r for r in offline.audit_rows if r["step"] == "decide_route")
-    assert row["prompt_version"] == "route_llm_v1" and row["tokens_in"] == 800
+    assert row["prompt_version"] == "route_llm_v2" and row["tokens_in"] == 800
 
 
 def test_llm_route_mode_unparsed_answer_is_needs_info(offline, monkeypatch):

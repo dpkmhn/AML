@@ -222,3 +222,55 @@ def test_confidence_boundary(confidence, expected):
 @pytest.mark.parametrize("score, expected", [(0.39, "close"), (0.4, "needs_info")])
 def test_fired_boundary(score, expected):
     assert route([finding(score=score)], assessment()).route == expected
+
+
+# ---- R6 and R7: written escalation criteria 3 and 4 (stage 4.3) -------------------------
+def route_flagged(findings, a, flagged=("TXN-000102",), risk: str = "low"):
+    return decide_route(findings, a, risk_rating=risk, kyc_notes=KYC, txn_amounts=KNOWN,
+                        flagged_txn_ids=list(flagged), t=T)
+
+
+def test_r6_instruction_reference_with_a_moderate_signal_escalates():
+    # without the flag this is R0 needs_info (0.5, unexplained)
+    d = route_flagged([finding(score=0.5)], assessment())
+    assert (d.route, d.rule_ids) == ("escalate", ["R6"])
+    assert "TXN-000102" in d.reasons[0]
+
+
+def test_r6_applies_even_when_the_typology_is_explained():
+    d = route_flagged([finding(score=0.8)], assessment([explained()]))
+    assert (d.route, d.rule_ids) == ("escalate", ["R6"])
+
+
+def test_r6_needs_a_typology_signal():
+    d = route_flagged([finding(score=0.3)], assessment())
+    assert d.route == "close"
+
+
+def test_r1_still_comes_first():
+    d = route_flagged([finding(score=0.9)], assessment())
+    assert d.rule_ids == ["R1"]
+
+
+def test_r7_two_typologies_besides_profile_mismatch_escalate():
+    f = [finding("pass_through", 0.5), finding("high_risk_geo", 0.5, ("TXN-000103",))]
+    d = route(f, assessment())
+    assert (d.route, d.rule_ids) == ("escalate", ["R7"])
+
+
+def test_r7_profile_mismatch_does_not_count_towards_several():
+    f = [finding("profile_mismatch", 0.5), finding("structuring", 0.5, ("TXN-000103",))]
+    d = route(f, assessment())
+    assert (d.route, d.rule_ids) == ("needs_info", ["R0"])
+
+
+def test_r7_all_explained_does_not_escalate():
+    f = [finding("pass_through", 0.5), finding("high_risk_geo", 0.5)]
+    d = route(f, assessment([explained("pass_through"), explained("high_risk_geo")]))
+    assert d.route == "close"
+
+
+def test_r7_one_explained_one_not_escalates():
+    f = [finding("pass_through", 0.5), finding("high_risk_geo", 0.5, ("TXN-000103",))]
+    d = route(f, assessment([explained("pass_through")]))
+    assert (d.route, d.rule_ids) == ("escalate", ["R7"])

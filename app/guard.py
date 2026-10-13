@@ -13,8 +13,16 @@ import re
 
 from app.schemas import Txn
 
-SUSPICIOUS = re.compile(
-    r"(system|assistant|ignore|instruction|close this|false positive|override)", re.I)
+# Instruction-like text, by kind rather than by known phrasing: a role marker, an address to
+# whoever reviews the alert, a route or verdict, or a request to ignore instructions.
+SUSPICIOUS = re.compile(r"""
+    \b(system|assistant|admin|override)\b                        # role markers
+  | \b(ai|reviewer|analyst|compliance)\b                   # addressing the reviewer
+  | \b(escalat\w*|false\ positive|pre-?approved|auto[\ -]?close)  # a verdict
+  | \bmark\ (it|this|as)\b | \bclose\ (this|the)\ (alert|case)\b
+  | \bno\ (review|escalation)\b | \b(do\ not|don't)\ (review|escalate|flag)\b
+  | \bignore\b.*\binstructions?\b
+""", re.I | re.X)
 TXN_FIELDS = {"txn_id", "ts", "amount_aed", "direction", "channel", "counterparty_name",
               "counterparty_country"}
 MAX_REFERENCE_CHARS = 140

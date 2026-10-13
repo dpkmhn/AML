@@ -8,7 +8,7 @@ confidence), and code checks those facts before they count:
 - and only for what it covers: the supported explanations of a typology must name
   transactions making up `min_explained_share` of the finding's evidence amount, so a true
   quote about the salary cannot explain the credits that fired the rule;
-- escalation rules run first, so nothing below them can hide an escalation;
+- escalation rules run first (R1, R2, R6, R7), so nothing below them can hide an escalation;
 - when no rule matches cleanly, the answer is Needs more info, never Close.
 """
 
@@ -56,8 +56,10 @@ def explained_share(f: TypologyFinding, explanations: list[BenignExplanation],
 
 def decide_route(findings: list[TypologyFinding], assessment: CaseAssessment, *,
                  risk_rating: str, kyc_notes: str, txn_amounts: Mapping[str, float],
+                 flagged_txn_ids: Collection[str] = (),
                  t: Mapping[str, Any] | None = None) -> RouteDecision:
-    """txn_amounts maps every transaction ID in the case's review window to its amount."""
+    """txn_amounts maps every transaction ID in the case's review window to its amount;
+    flagged_txn_ids are the references app/guard.py found instruction-like."""
     p = (t or load_thresholds())["routing"]
     fired = [f for f in findings if f.score >= p["high_risk_escalate_score"]]
     supported = [b for b in assessment.benign_explanations
@@ -84,6 +86,22 @@ def decide_route(findings: list[TypologyFinding], assessment: CaseAssessment, *,
         return decision("escalate", "R2", [
             f"High-risk customer and {f.typology} scored {f.score:.2f} "
             f"(>= {p['high_risk_escalate_score']})" for f in fired])
+
+    # R6 (escalation criterion 3): a customer-written field tries to instruct the reviewer,
+    # alongside any typology signal, explained or not
+    if flagged_txn_ids and fired:
+        return decision("escalate", "R6", [
+            f"Instruction-like payment reference in {', '.join(sorted(flagged_txn_ids))} "
+            f"alongside {', '.join(f.typology for f in fired)}"])
+
+    # R7 (escalation criterion 4): several typologies together, at least one unexplained.
+    # Profile mismatch does not count: a large inflow accompanies most other patterns.
+    several = [f for f in fired if f.typology not in p["combination_excludes"]]
+    open_ = [f.typology for f in several if f.typology not in explained]
+    if len(several) >= 2 and open_:
+        return decision("escalate", "R7", [
+            f"{len(several)} typologies together ({', '.join(f.typology for f in several)}), "
+            f"unexplained: {', '.join(open_)}"])
 
     # R3: information missing that would change the decision
     gaps = [m.item for m in assessment.missing_information if m.changes_decision]

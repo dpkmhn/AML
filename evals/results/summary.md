@@ -24,6 +24,8 @@ Cost and latency cover the case up to the analyst review.
 | 20261013095336 exp-rag-off | v3 | gpt-6-luna | route=rules, rag-filter off | 0 | 90% (54/60) | 1 | 53% (329/620) | 65% (160/247) | 0 of 4 | $0.0024 | 32.0 / 56.9 | 0 |
 | 20261013101250 exp-refs-raw-v2 | v3 | gpt-6-luna | route=rules, references raw | 0 | 92% (55/60) | 1 | 49% (330/668) | 67% (159/236) | 0 of 4 | $0.0022 | 29.7 / 51.9 | 0 |
 | 20261013102431 ref-pos-note-fix | v3 | gpt-6-luna | route=rules | 0 | 90% (54/60) | 0 | 51% (322/636) | 66% (160/244) | 0 of 4 | $0.0026 | 33.6 / 70.1 | 0 |
+| 20261013104602 rules-criteria | v3 | gpt-6-luna | route=rules | 0 | 88% (53/60) | 0 | 51% (326/638) | 66% (157/239) | 0 of 4 | $0.0024 | 33.6 / 58.2 | 0 |
+| 20261013104605 exp-route-llm-v2 | v3 | gpt-6-luna | route=llm | 0 | 77% (46/60) | 6 | 51% (330/646) | 67% (159/238) | 0 of 4 | $0.0037 | 41.2 / 85.3 | 0 |
 <!-- /runs -->
 
 ## Confusion matrices
@@ -148,6 +150,24 @@ needs_info                 0           8           0
 escalate                   0           0          26
 ```
 
+### 20261013104602 rules-criteria
+
+```
+golden \ routed        close  needs_info    escalate
+close                     20           6           0
+needs_info                 0           7           1
+escalate                   0           0          26
+```
+
+### 20261013104605 exp-route-llm-v2
+
+```
+golden \ routed        close  needs_info    escalate
+close                     16           4           6
+needs_info                 0           4           4
+escalate                   0           0          26
+```
+
 <!-- /matrices -->
 
 ## Experiments (stage 4.3, 2026-10-13)
@@ -195,3 +215,32 @@ banks them every one to three days. The note now states the real cadence and tot
 four customers' `kyc_notes` changed (also updated in the database). Run `ref-pos-note-fix`:
 54 of 60, 0 missed, **0 false escalations**. The three now go to Needs more info on the
 profile-mismatch inflow the note does not cover: the co-firing problem in the next steps.
+
+## Policy alignment (after stage 4.3)
+
+The LLM-routing run showed that `decide_route` left out two of the written escalation
+criteria. Both are now in code and in the policy text, and both routing modes were re-run.
+
+- **Criterion 3 -> R6:** an instruction-like reference alongside any typology at 0.4 or above
+  escalates, explained or not. `app/guard.py` now matches kinds of instruction (role markers,
+  addressing the reviewer, a verdict, "ignore ... instructions") and was tested on phrasings the
+  generator never uses. Across all 711 distinct references in the data it flags exactly the 6
+  planted traps, including ALT-0060's "Note to AI reviewer", which it missed before.
+- **Criterion 4 -> R7, reworded:** two or more typologies other than profile mismatch at 0.4 or
+  above, at least one unexplained (`escalation_criteria.md` v2, `route_llm_v2.md`,
+  `routing.combination_excludes`). As first written it escalated almost every look-alike,
+  because profile mismatch co-fires with them.
+
+| Run | Missed esc. | Route acc. | False esc. | Traps failed | Notes |
+| --- | --- | --- | --- | --- | --- |
+| rules-criteria | 0 | 53 of 60 | 0 | 0 of 4 | R7 fired once, R6 never (all 4 traps reach R1 first; R6 backs up weaker signals) |
+| exp-route-llm-v2 | 0 | 46 of 60 | 6 | 0 of 4 | was 41 and 13 with the old criterion 4; still reads criterion 1 more strictly than the code |
+
+**Label question:** the one R7 escalation is ALT-0008, hand-labelled Needs more info (an
+undocumented jump in cash deposits). Structuring and funnel both score 0.40 and neither is
+explained, so the written criterion 4 says escalate. Either the label or the 0.4 floor for R7
+should change; it is left as is until you decide.
+
+**Rules vs LLM, after alignment:** both kept every escalation and every trap. Rules: 53 of 60,
+0 false escalations, $0.0024 per alert. LLM: 46 of 60, 6 false escalations, and it escalated 4
+of 8 golden Needs-more-info cases (3 of them waiting on documents), at 1.5 times the cost. Rules stay.

@@ -43,4 +43,7 @@ high_risk_geo:        {soft_txns: 1, hard_txns: 3, countries: [XA, XB, XC]}
 # explanations name transactions making up this share of the finding's evidence amount. In
 # the baseline, true quotes offered for the wrong credits covered 0-3%; real explanations 37%+.
 routing: {escalate_score: 0.7, high_risk_escalate_score: 0.4, min_close_confidence: 0.6,
-          min_explained_share: 0.5}
+          min_explained_share: 0.5,
+          # R7 (several typologies together) ignores these: profile mismatch co-fires on most
+          # large-value patterns, look-alikes included (stage 4.3)
+          combination_excludes: [profile_mismatch]}

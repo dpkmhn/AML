@@ -8,11 +8,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Admin connection: schema, data loading, resets
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/aml"
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/aml"
     # Copilot tools read through this role (SELECT only)
-    database_url_ro: str = "postgresql+psycopg://copilot_ro:copilot_ro@localhost:5432/aml"
+    database_url_ro: str = "postgresql+psycopg://copilot_ro:copilot_ro@localhost:5433/aml"
     # Cases and audit log are written through this role
-    database_url_rw: str = "postgresql+psycopg://copilot_rw:copilot_rw@localhost:5432/aml"
+    database_url_rw: str = "postgresql+psycopg://copilot_rw:copilot_rw@localhost:5433/aml"
 
     openai_api_key: SecretStr | None = None
     model_small: str

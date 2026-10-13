@@ -9,7 +9,7 @@ services:
       TZ: UTC
       PGTZ: UTC
     ports:
-      - "5432:5432"
+      - "5433:5432"   # host 5433: a native Windows Postgres may own 5432
     volumes:
       - aml_pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro

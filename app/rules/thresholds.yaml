@@ -24,6 +24,9 @@ monitoring:
 # activity often continues after the alert window. The analyst reviews up to `review_lag_days`
 # after the window end, and judges it against the `baseline_days` before the window.
 features: {review_lag_days: 30, baseline_days: 90}
+# How far before the review window the copilot reads transactions (stage 3.1). Dormancy needs
+# the last activity before a long silence, so this is much longer than the baseline.
+history_days: 365
 
 # Copilot typology rules (stage 2.1): score 0.4 at the soft threshold, 1.0 at the hard one.
 # Each windowed rule takes the best `window_days` span inside the review window.

@@ -13,6 +13,11 @@ docker compose up -d            # Postgres 16 + pgvector
 uv run python -m data.generator.generate --reset
 uv run python -m data.build_golden     # 60-alert golden set + data/out/golden_review.md
 uv run python scripts/check_rules.py   # typology rules on the golden alerts
+uv run python -m app.rag.ingest       # guidance documents -> guidance_chunks
+uv run python scripts/check_retrieval.py
+uv run python scripts/run_one.py ALT-0042   # runs a case up to the analyst review
+uv run python scripts/review_case.py CASE-0001 --reviewer <name> --route escalate
+uv run python scripts/replay_case.py CASE-0001   # the full audit trail
 uv run pytest
 ```
 
@@ -30,6 +35,13 @@ uv run pytest
 | `evals/` | Evaluation runner, metrics, results |
 | `ui/` | Streamlit analyst queue |
 | `tests/` | Unit tests for rules and routing |
+
+## Design notes
+
+- Retrieval filters by typology first and ranks by vector similarity second. The corpus is
+  about 50 section-level chunks, so there is no vector index: an exact scan is fast and its
+  results are exact.
+- The database container listens on host port 5433, so it can run beside a local Postgres.
 
 ## Conventions
 

@@ -166,12 +166,14 @@ def _funnel(a: _Account, r: slice, review_start: date, t: Mapping) -> dict:
 def _profile_mismatch(a: _Account, r: slice, base: slice, review_start: date, income: float,
                       t: Mapping) -> dict:
     """Best 30-day inflow against declared income. Evidence is the new money: inflows from
-    counterparties not seen in the baseline (cash counts as new), largest first."""
+    counterparties not seen in the baseline (cash counts as new), largest first. When new
+    money is under `min_new_share` of the inflow, the spike came from known payers (a bonus
+    from the employer), so the evidence is all inflows instead."""
     s = _best_window(a, r, review_start, 30, lambda s: float(a.amount[s][a.is_in[s]].sum()))
     inflow = float(a.amount[s][a.is_in[s]].sum())
     known = set(a.cp[base]) - {""}
     idx = [i for i in range(s.start, s.stop) if a.is_in[i] and a.cp[i] not in known]
-    if not idx:
+    if float(a.amount[idx].sum()) < t["profile_mismatch"]["min_new_share"] * inflow:
         idx = [i for i in range(s.start, s.stop) if a.is_in[i]]
     idx = sorted(idx, key=lambda i: -a.amount[i])
     # keep the inflows that make up 90% of the new money

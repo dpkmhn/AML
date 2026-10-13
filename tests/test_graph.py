@@ -7,6 +7,7 @@ import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
+from app.config import settings
 from app.graph.build import NODES, build_graph, checkpoint_serde
 from app.graph.nodes.review import INTERNAL
 from app.schemas import (
@@ -104,9 +105,10 @@ def test_llm_steps_record_model_prompt_and_tokens(offline):
     graph = build_graph(InMemorySaver(serde=checkpoint_serde()))
     resume(graph, final_route=start(graph, "ALT-0042").values["route"].route)
     rows = {r["step"]: r for r in offline.audit_rows}
-    assert rows["assess_case"]["prompt_version"] == "assess_case_v1"
+    v = settings.prompt_version
+    assert rows["assess_case"]["prompt_version"] == f"assess_case_v{v}"
     assert rows["assess_case"]["tokens_in"] == 1000
-    assert rows["draft_narrative"]["prompt_version"] == "draft_narrative_v1"
+    assert rows["draft_narrative"]["prompt_version"] == f"draft_narrative_v{v}"
     assert rows["draft_narrative"]["tokens_out"] == 400
     assert rows["load_alert"]["model"] is None
 

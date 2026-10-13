@@ -19,7 +19,7 @@ from app.prompts import load_prompt
 from data.build_golden import GOLDEN_PATH
 
 JUDGE_PROMPT = "judge_narrative"
-JUDGE_VERSION = 1
+JUDGE_VERSION = 2
 # a fixed stratified sample: the first alerts of each golden group, 15 in all
 PER_GROUP = {"planted": 5, "lookalike": 4, "noise": 2, "needs_info": 2, "trap": 2}
 

@@ -140,14 +140,17 @@ def latency(cases: list[Case]) -> tuple[float, float]:
 RUBRIC = ["customer", "trigger", "checks_performed", "findings_with_ids", "conclusion_with_reason"]
 
 
-def load_hand_scores(path: Path) -> dict[str, dict[str, int]]:
-    """evals/notes/hand_scores.csv: alert_id, one 0/1 column per rubric item, faithful (0/1).
-    Rows with any blank cell are not scored yet and are skipped."""
+def load_hand_scores(path: Path, run_id: str | None = None) -> dict[str, dict[str, int]]:
+    """evals/notes/hand_scores.csv: alert_id, run_id (the run whose narratives were scored),
+    one 0/1 column per rubric item, faithful (0/1). With run_id, only that run's rows are
+    returned: other runs drafted different narratives. Rows with a blank score are skipped."""
     if not path.exists():
         return {}
     out = {}
     with path.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
+            if run_id is not None and row.get("run_id") != run_id:
+                continue
             cells = [row.get(k, "").strip() for k in [*RUBRIC, "faithful"]]
             if all(cells):
                 out[row["alert_id"]] = {k: int(v) for k, v in zip([*RUBRIC, "faithful"], cells,

@@ -5,6 +5,9 @@ confidence), and code checks those facts before they count:
 
 - an explanation counts only with a KYC quote found word for word in kyc_notes, or with
   transaction IDs that exist in this case;
+- and only for what it covers: the supported explanations of a typology must name
+  transactions making up `min_explained_share` of the finding's evidence amount, so a true
+  quote about the salary cannot explain the credits that fired the rule;
 - escalation rules run first, so nothing below them can hide an escalation;
 - when no rule matches cleanly, the answer is Needs more info, never Close.
 """
@@ -40,13 +43,28 @@ def is_supported(b: BenignExplanation, kyc_notes: str, known_txn_ids: Collection
     return bool(b.evidence_txn_ids) and all(i in known_txn_ids for i in b.evidence_txn_ids)
 
 
+def explained_share(f: TypologyFinding, explanations: list[BenignExplanation],
+                    txn_amounts: Mapping[str, float]) -> float:
+    """Share of the finding's evidence amount named by these explanations' transaction IDs.
+    A finding with no evidence amount is fully covered by any explanation."""
+    named = {i for b in explanations for i in b.evidence_txn_ids}
+    total = sum(txn_amounts.get(i, 0.0) for i in f.evidence_txn_ids)
+    if total <= 0:
+        return 1.0 if explanations else 0.0
+    return sum(txn_amounts.get(i, 0.0) for i in f.evidence_txn_ids if i in named) / total
+
+
 def decide_route(findings: list[TypologyFinding], assessment: CaseAssessment, *,
-                 risk_rating: str, kyc_notes: str, known_txn_ids: Collection[str],
+                 risk_rating: str, kyc_notes: str, txn_amounts: Mapping[str, float],
                  t: Mapping[str, Any] | None = None) -> RouteDecision:
+    """txn_amounts maps every transaction ID in the case's review window to its amount."""
     p = (t or load_thresholds())["routing"]
     fired = [f for f in findings if f.score >= p["high_risk_escalate_score"]]
-    explained = {b.typology for b in assessment.benign_explanations
-                 if is_supported(b, kyc_notes, known_txn_ids)}
+    supported = [b for b in assessment.benign_explanations
+                 if is_supported(b, kyc_notes, txn_amounts)]
+    explained = {f.typology for f in findings
+                 if explained_share(f, [b for b in supported if b.typology == f.typology],
+                                    txn_amounts) >= p["min_explained_share"]}
 
     def decision(route: str, rule_id: str, reasons: list[str]) -> RouteDecision:
         return RouteDecision(

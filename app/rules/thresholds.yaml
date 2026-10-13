@@ -34,7 +34,13 @@ structuring:   {band_low: 0.90, soft_count: 3, hard_count: 5, window_days: 14}
 pass_through:  {outflow_share: 0.80, max_hours: 48, soft_events: 2, hard_events: 4, window_days: 30,
                 min_inflow_aed: 20000}
 funnel:        {soft_senders: 8, hard_senders: 15, max_receivers: 2, window_days: 30}
-profile_mismatch:     {soft_ratio: 2.5, hard_ratio: 5.0}
+# min_new_share (stage 4.2): below this share of new-counterparty money, the evidence is all
+# inflows, not just the new ones (a bonus from the employer is the spike, not a small gift).
+profile_mismatch:     {soft_ratio: 2.5, hard_ratio: 5.0, min_new_share: 0.5}
 dormant_reactivation: {min_inactive_days: 180, soft_ratio: 4.0, hard_ratio: 10.0}
 high_risk_geo:        {soft_txns: 1, hard_txns: 3, countries: [XA, XB, XC]}
-routing: {escalate_score: 0.7, high_risk_escalate_score: 0.4, min_close_confidence: 0.6}
+# min_explained_share (stage 4.2): a typology counts as explained only when its supported
+# explanations name transactions making up this share of the finding's evidence amount. In
+# the baseline, true quotes offered for the wrong credits covered 0-3%; real explanations 37%+.
+routing: {escalate_score: 0.7, high_risk_escalate_score: 0.4, min_close_confidence: 0.6,
+          min_explained_share: 0.5}

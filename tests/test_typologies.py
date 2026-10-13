@@ -205,6 +205,16 @@ def test_profile_mismatch_evidence_is_new_money():
     assert ev and all(by_id[i]["counterparty_id"] == "CP-NEW" for i in ev)
 
 
+def test_profile_mismatch_evidence_falls_back_when_new_money_is_small():
+    """ALT-0065 (stage 4.2): the spike is a bonus from the known employer. Evidence must be
+    the bonus, not the one small transfer from a new sender."""
+    bonus = txn(date(2026, 7, 12), INCOME * 3, cp="CP-EMP", reference="Bonus")
+    tip = txn(date(2026, 7, 14), 1400, cp="CP-FRIEND")
+    rows = background() + [bonus, tip]
+    ev = findings(rows)["profile_mismatch"].evidence_txn_ids
+    assert bonus["txn_id"] in ev
+
+
 def test_dormant_needs_long_silence():
     assert score(dormant(15.0, gap_days=200), "dormant_reactivation") == 1.0
     assert score(dormant(15.0, gap_days=120), "dormant_reactivation") == 0

@@ -38,7 +38,7 @@ from app.schemas import RunConfig
 from app.validate import TXN_ID
 from data.build_golden import GOLDEN_PATH
 from evals import metrics
-from evals.judge import JUDGE_SAMPLE, judge
+from evals.judge import JUDGE_SAMPLE, JUDGE_VERSION, judge
 
 EVALS = Path(__file__).resolve().parent
 RESULTS = EVALS / "results"
@@ -204,7 +204,7 @@ def update_summary(run: dict[str, Any], cases: list[dict[str, Any]]) -> None:
     SUMMARY.write_text(doc, "utf-8", newline="\n")
 
 
-def report(cases: list[dict[str, Any]]) -> dict[str, Any]:
+def report(cases: list[dict[str, Any]], run_id: str) -> dict[str, Any]:
     inj, traps = metrics.injection_failures(cases)
     mean, p95c = metrics.cost_per_alert(cases)
     p50, p95 = metrics.latency(cases)
@@ -220,7 +220,8 @@ def report(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "low_confidence": metrics.low_confidence(cases),
         "confusion": metrics.confusion(cases).tolist(),
         "cost_mean_usd": mean, "cost_p95_usd": p95c, "latency_p50_s": p50, "latency_p95_s": p95,
-        "judge_agreement": metrics.judge_agreement(cases, metrics.load_hand_scores(HAND_SCORES)),
+        "judge_agreement": metrics.judge_agreement(
+            cases, metrics.load_hand_scores(HAND_SCORES, run_id)),
         "errors": [x["alert_id"] for x in cases if x["error"]],
     }
 
@@ -293,9 +294,10 @@ def main() -> None:
         cases = sorted(pool.map(one, golden), key=lambda c: c["alert_id"])
 
     run = {"run_id": run_id, "tag": args.tag, "started": now.isoformat(),
-           "config": {**cfg.model_dump(), "route_mode": "rules"},
+           "config": {**cfg.model_dump(), "route_mode": "rules",
+                      "judge_version": JUDGE_VERSION},
            "prices_checked": str(yaml.safe_load((EVALS / "prices.yaml").read_text())["checked"])}
-    r = report(cases)
+    r = report(cases, run_id)
     RESULTS.mkdir(exist_ok=True)
     path = RESULTS / f"{now:%Y-%m-%d}_{args.tag}.json"
     if path.exists():

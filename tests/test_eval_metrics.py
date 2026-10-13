@@ -59,10 +59,11 @@ def test_typology_detection():
 
 def test_judge_agreement(tmp_path):
     p = tmp_path / "hand.csv"
-    p.write_text("alert_id,customer,trigger,checks_performed,findings_with_ids,"
-                 "conclusion_with_reason,faithful\nA1,1,1,1,0,1,1\nA2,,,,,,\n", "utf-8")
-    hand = metrics.load_hand_scores(p)
-    assert list(hand) == ["A1"]  # blank rows are not scored yet
+    p.write_text("alert_id,run_id,customer,trigger,checks_performed,findings_with_ids,"
+                 "conclusion_with_reason,faithful\nA1,R1,1,1,1,0,1,1\nA2,R1,,,,,,\n"
+                 "A3,R2,1,1,1,1,1,1\n", "utf-8")
+    hand = metrics.load_hand_scores(p, "R1")
+    assert list(hand) == ["A1"]  # A2 is not scored yet; A3 scored another run's narrative
     judged = [{"alert_id": "A1", "judge": {"customer": True, "trigger": True,
                                            "checks_performed": True, "findings_with_ids": True,
                                            "conclusion_with_reason": True, "faithful": True}}]

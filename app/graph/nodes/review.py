@@ -36,7 +36,8 @@ def decide_route(state: CaseState) -> CaseState:
     p = state["profile"]
     route = routing.decide_route(
         state["findings"], state["assessment"], risk_rating=p.risk_rating,
-        kyc_notes=p.kyc_notes, known_txn_ids={t.txn_id for t in review_txns(state)},
+        kyc_notes=p.kyc_notes,
+        txn_amounts={t.txn_id: t.amount_aed for t in review_txns(state)},
         t=load_thresholds())
     cases.set_recommended_route(state["case_id"], route.route)
     return {"route": route}

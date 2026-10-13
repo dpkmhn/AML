@@ -13,6 +13,11 @@ Cost and latency cover the case up to the analyst review.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 202610130841 baseline-4.1-mini | v1 | gpt-4.1-mini | route=rules | 0 | 48% (29/60) | 4 | 65% (325/500) | 68% (192/281) | 2 of 4 | $0.0045 | 4.9 / 6.8 | 0 |
 | 202610130846 baseline | v1 | gpt-6-luna | route=rules | 0 | 52% (31/60) | 0 | 56% (327/580) | 67% (174/259) | 1 of 4 | $0.0022 | 25.4 / 38.6 | 0 |
+| 202610130907 fix1-coverage | v1 | gpt-6-luna | route=rules | 0 | 57% (34/60) | 1 | 59% (317/541) | 66% (185/279) | 0 of 4 | $0.0022 | 26.2 / 38.6 | 0 |
+| 202610130914 fix2-prompt-v2 | v2 | gpt-6-luna | route=rules | 0 | 82% (49/60) | 3 | 53% (326/610) | 67% (169/251) | 0 of 4 | $0.0025 | 33.5 / 71.8 | 0 |
+| 202610130927 fix3-pm-evidence | v2 | gpt-6-luna | route=rules | 0 | 75% (45/60) | 3 | 54% (327/604) | 67% (172/257) | 0 of 4 | $0.0025 | 34.3 / 62.4 | 0 |
+| 202610130934 fix4-prompt-v3 | v3 | gpt-6-luna | route=rules | 0 | 93% (56/60) | 2 | 50% (330/655) | 66% (156/235) | 0 of 4 | $0.0025 | 37.7 / 66.7 | 0 |
+| 202610130943 fix4-prompt-v3-rerun | v3 | gpt-6-luna | route=rules | 0 | 90% (54/60) | 2 | 52% (328/626) | 66% (163/246) | 0 of 4 | $0.0024 | 35.6 / 59.0 | 0 |
 <!-- /runs -->
 
 ## Confusion matrices
@@ -36,6 +41,51 @@ golden \ routed        close  needs_info    escalate
 close                      0          26           0
 needs_info                 0           8           0
 escalate                   0           3          23
+```
+
+### 202610130907 fix1-coverage
+
+```
+golden \ routed        close  needs_info    escalate
+close                      0          25           1
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
+### 202610130914 fix2-prompt-v2
+
+```
+golden \ routed        close  needs_info    escalate
+close                     17           6           3
+needs_info                 0           6           2
+escalate                   0           0          26
+```
+
+### 202610130927 fix3-pm-evidence
+
+```
+golden \ routed        close  needs_info    escalate
+close                     14           9           3
+needs_info                 0           5           3
+escalate                   0           0          26
+```
+
+### 202610130934 fix4-prompt-v3
+
+```
+golden \ routed        close  needs_info    escalate
+close                     22           2           2
+needs_info                 0           8           0
+escalate                   0           0          26
+```
+
+### 202610130943 fix4-prompt-v3-rerun
+
+```
+golden \ routed        close  needs_info    escalate
+close                     20           4           2
+needs_info                 0           8           0
+escalate                   0           0          26
 ```
 
 <!-- /matrices -->

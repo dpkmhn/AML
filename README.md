@@ -48,7 +48,7 @@ deterministic code (blue), so they can be unit-tested and audited. The graph pau
 `analyst_review` (green) and is checkpointed in Postgres under the case ID, so a case resumes
 after a restart. Nothing closes an alert without a human decision.
 
-The Streamlit UI talks only to the FastAPI service, which talks only to the graph and the
+The analyst UIs (React in `web/`, and the original Streamlit one) talk only to the FastAPI service, which talks only to the graph and the
 database. Postgres with pgvector holds the data, the cases, the audit log and the guidance
 chunks.
 
@@ -123,8 +123,10 @@ uv run python -m data.generator.generate --reset   # 200 customers, ~19,800 tran
 uv run python -m app.rag.ingest          # 9 guidance documents -> 53 embedded chunks
 ```
 
-Open the analyst UI at <http://localhost:8501>, pick an alert and open its case. The first run
-of a case takes 20 to 60 seconds. The API's docs are at <http://localhost:8000/docs>.
+Open the analyst UI at <http://localhost:3000> (React; the Streamlit version is still at
+<http://localhost:8501>), pick an alert and open its case. The first run of a case takes 20 to
+60 seconds. To work on the React UI with hot reload against the API on port 8000:
+`cd web; npm install; npm run dev` (port 5173). The API's docs are at <http://localhost:8000/docs>.
 
 ```powershell
 uv run pytest                                  # offline: no database or API key needed
@@ -216,7 +218,8 @@ The UI's queue already sorts recommended escalations first, which is phase 3's m
 | `data/generator/` | Seeded synthetic customers, transactions, scenarios and look-alikes |
 | `data/golden_set.jsonl` | The 60 hand-checked labels |
 | `evals/` | Evaluation runner, metrics, narrative judge, results and notes |
-| `ui/` | Streamlit: prioritised queue, case page with the decision form, audit trail |
+| `web/` | React + TypeScript (Vite): prioritised queue, case page with the decision form, audit trail |
+| `ui/` | Streamlit: the first version of the same three pages |
 | `tests/` | Offline tests: rules, routing, retrieval, the graph and the API |
 | `db/init/` | Schema and the two database roles |
 

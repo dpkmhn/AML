@@ -46,5 +46,13 @@ services:
     depends_on:
       - api
 
+  web:
+    build: ./web
+    container_name: aml-web
+    ports:
+      - "3000:80"   # nginx serves the React UI and proxies /api to the api service
+    depends_on:
+      - api
+
 volumes:
   aml_pgdata:

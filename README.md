@@ -20,13 +20,21 @@ uv run python scripts/review_case.py CASE-0001 --reviewer <name> --route escalat
 uv run python scripts/replay_case.py CASE-0001   # the full audit trail
 uv run python -m evals.run_eval --tag baseline   # golden set -> evals/results/summary.md
 uv run pytest
+docker compose up -d --build           # db, api (localhost:8000/docs), ui (localhost:8501)
+```
+
+Without Docker for the app, run the two services locally (Postgres still in Compose):
+
+```powershell
+uv run uvicorn app.api.main:app --reload
+uv run streamlit run ui/app.py
 ```
 
 ## Layout
 
 | Path | What lives there |
 | --- | --- |
-| `app/api/` | FastAPI routes: alerts, cases, review |
+| `app/api/` | FastAPI: queue, cases, review, audit, health; the UI's only way in |
 | `app/graph/` | LangGraph state, nodes, edges |
 | `app/tools/` | Read-only SQL tools: profile, transactions, counterparties |
 | `app/rules/` | Monitoring rules, typology rules, routing, `thresholds.yaml` |
@@ -34,7 +42,7 @@ uv run pytest
 | `app/prompts/` | Versioned prompts (`<name>_v<N>.md`) |
 | `data/generator/` | Seeded synthetic customers, transactions, scenarios |
 | `evals/` | Evaluation runner, metrics, results |
-| `ui/` | Streamlit analyst queue |
+| `ui/` | Streamlit: prioritised queue, case page with the decision form, audit trail |
 | `tests/` | Unit tests for rules and routing |
 
 ## Design notes

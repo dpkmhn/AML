@@ -19,5 +19,32 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build: .
+    container_name: aml-api
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    environment:
+      # inside the compose network the database is db:5432, not localhost:5433
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/aml
+      DATABASE_URL_RO: postgresql+psycopg://copilot_ro:copilot_ro@db:5432/aml
+      DATABASE_URL_RW: postgresql+psycopg://copilot_rw:copilot_rw@db:5432/aml
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ui:
+    build: .
+    container_name: aml-ui
+    command: streamlit run ui/app.py --server.address 0.0.0.0 --server.port 8501
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
 volumes:
   aml_pgdata:

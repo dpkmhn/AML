@@ -41,6 +41,22 @@ def start_eval_case(case_id: str, alert_id: str) -> str:
     return case_id
 
 
+def get_case(case_id: str) -> dict[str, Any] | None:
+    """The cases row, or None. Evaluation cases are not served."""
+    with session("rw") as s:
+        row = s.execute(text("SELECT * FROM cases WHERE case_id = :c AND kind = 'case'"),
+                        {"c": case_id}).mappings().one_or_none()
+    return dict(row) if row else None
+
+
+def case_routes() -> dict[str, dict[str, Any]]:
+    """alert_id -> case_id and routes, for every real case (the queue's sort key)."""
+    with session("rw") as s:
+        rows = s.execute(text("SELECT alert_id, case_id, recommended_route, final_route "
+                              "FROM cases WHERE kind = 'case'")).mappings().all()
+    return {r["alert_id"]: dict(r) for r in rows}
+
+
 def set_recommended_route(case_id: str, route: str) -> None:
     with session("rw") as s:
         s.execute(text("UPDATE cases SET recommended_route = :r WHERE case_id = :c"),

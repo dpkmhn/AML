@@ -185,3 +185,64 @@ class AnalystDecision(BaseModel):
             raise ValueError(f"override_reason is required when overriding the recommended "
                              f"route ({recommended} -> {self.final_route})")
         return self
+
+
+# --- API request and response models (app/api/main.py) ---
+
+CaseStatus = Literal["awaiting_review", "decided", "incomplete"]
+
+
+class AlertListItem(BaseModel):
+    alert_id: str
+    customer_id: str
+    customer_name: str
+    rule_id: str
+    window_start: date
+    window_end: date
+    created_at: datetime
+    status: Literal["open", "in_review", "closed"]
+    case_id: str | None = None
+    recommended_route: Route | None = None
+    final_route: Route | None = None
+
+
+class CaseCreate(BaseModel):
+    alert_id: str
+
+
+class CaseDetail(BaseModel):
+    """What the case page shows. `pack` is the analyst pack (app/graph/pack.py); the evidence
+    transactions and guidance text ride beside it so the page needs no other call."""
+
+    case_id: str
+    alert_id: str
+    status: CaseStatus
+    recommended_route: Route | None = None
+    pack: dict | None = None
+    evidence_txns: list[Txn] = []
+    guidance_content: dict[str, str] = {}
+    decision: AnalystDecision | None = None
+    narrative: str | None = None
+    narrative_errors: list[str] = []
+    decided_at: datetime | None = None
+
+
+class ReviewResult(BaseModel):
+    case_id: str
+    recommended_route: Route
+    final_route: Route
+    reviewer: str
+    narrative: str
+    narrative_errors: list[str] = []
+
+
+class AuditRow(BaseModel):
+    id: int
+    step: str
+    model: str | None = None
+    prompt_version: str | None = None
+    output: dict | list | None = None
+    tokens_in: int | None = None
+    tokens_out: int | None = None
+    latency_ms: int | None = None
+    created_at: datetime

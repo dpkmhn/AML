@@ -68,6 +68,15 @@ def write_row(row: dict[str, Any]) -> None:
         s.execute(_INSERT, row)
 
 
+def read_trail(case_id: str) -> list[dict[str, Any]]:
+    """Every audit row of a case, in order."""
+    with session("rw") as s:
+        rows = s.execute(text("SELECT id, step, model, prompt_version, output, tokens_in, "
+                              "tokens_out, latency_ms, created_at FROM audit_log "
+                              "WHERE case_id = :c ORDER BY id"), {"c": case_id}).mappings()
+        return [dict(r) for r in rows]
+
+
 def audited(step: str) -> Callable[[Node], Node]:
     def wrap(fn: Node) -> Node:
         @functools.wraps(fn)

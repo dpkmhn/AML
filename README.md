@@ -18,6 +18,7 @@ uv run python scripts/check_retrieval.py
 uv run python scripts/run_one.py ALT-0042   # runs a case up to the analyst review
 uv run python scripts/review_case.py CASE-0001 --reviewer <name> --route escalate
 uv run python scripts/replay_case.py CASE-0001   # the full audit trail
+uv run python -m evals.run_eval --tag baseline   # golden set -> evals/results/summary.md
 uv run pytest
 ```
 

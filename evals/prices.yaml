@@ -1,0 +1,12 @@
+# USD per 1M tokens, standard tier. Source: https://developers.openai.com/api/docs/pricing
+# Checked: 2026-10-13. Update the date when you change a number.
+checked: 2026-10-13
+models:
+  gpt-6-luna:
+    input: 0.10
+    output: 0.50
+  # Retrieval embeddings are not in audit_log; at about 100 tokens per query they cost
+  # well under USD 0.0001 per alert and are left out of cost per alert.
+  text-embedding-3-small:
+    input: 0.02
+    output: 0.0

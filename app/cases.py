@@ -16,17 +16,28 @@ from app.db import session
 def start_case(alert_id: str) -> str:
     """The alert's case, created on first use; the alert moves to in_review."""
     with session("rw") as s:
-        case_id = s.execute(text("SELECT case_id FROM cases WHERE alert_id = :a"),
+        case_id = s.execute(text("SELECT case_id FROM cases "
+                                 "WHERE alert_id = :a AND kind = 'case'"),
                             {"a": alert_id}).scalar_one_or_none()
         if case_id is None:
             n = s.execute(text(
-                "SELECT coalesce(max(substring(case_id FROM 6)::int), 0) + 1 FROM cases"
+                "SELECT coalesce(max(substring(case_id FROM 6)::int), 0) + 1 FROM cases "
+                "WHERE kind = 'case'"
             )).scalar_one()
             case_id = f"CASE-{n:04d}"
             s.execute(text("INSERT INTO cases (case_id, alert_id) VALUES (:c, :a)"),
                       {"c": case_id, "a": alert_id})
         s.execute(text("UPDATE alerts SET status = 'in_review' "
                        "WHERE alert_id = :a AND status = 'open'"), {"a": alert_id})
+    return case_id
+
+
+def start_eval_case(case_id: str, alert_id: str) -> str:
+    """An evaluation case: its own row (kind 'eval') so the audit log can point at it; the
+    alert's status is left alone."""
+    with session("rw") as s:
+        s.execute(text("INSERT INTO cases (case_id, alert_id, kind) VALUES (:c, :a, 'eval') "
+                       "ON CONFLICT (case_id) DO NOTHING"), {"c": case_id, "a": alert_id})
     return case_id
 
 

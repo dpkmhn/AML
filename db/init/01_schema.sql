@@ -42,7 +42,8 @@ CREATE INDEX ON alerts (customer_id);
 
 CREATE TABLE cases (
   case_id           text PRIMARY KEY,            -- CASE-0001, also the LangGraph thread_id
-  alert_id          text NOT NULL UNIQUE REFERENCES alerts,
+  alert_id          text NOT NULL REFERENCES alerts,
+  kind              text NOT NULL DEFAULT 'case' CHECK (kind IN ('case', 'eval')),
   recommended_route text,
   final_route       text,
   reviewer          text,
@@ -52,6 +53,8 @@ CREATE TABLE cases (
   created_at        timestamptz NOT NULL DEFAULT now(),
   decided_at        timestamptz
 );
+-- one real case per alert; evaluation runs (EVAL-<run>-<alert>) may repeat an alert
+CREATE UNIQUE INDEX cases_alert_once ON cases (alert_id) WHERE kind = 'case';
 
 CREATE TABLE audit_log (
   id             bigserial PRIMARY KEY,

@@ -14,6 +14,8 @@ TXN_COLS = ["txn_id", "customer_id", "ts", "amount_aed", "direction", "channel",
             "counterparty_id", "counterparty_name", "counterparty_country", "reference"]
 ALERT_COLS = ["alert_id", "customer_id", "rule_id", "window_start", "window_end", "created_at",
               "status"]
+# LangGraph's PostgresSaver tables (app/graph/build.py); checkpoint_migrations is kept
+CHECKPOINT_TABLES = ("checkpoints", "checkpoint_blobs", "checkpoint_writes")
 
 
 def _conninfo() -> str:
@@ -31,6 +33,12 @@ def load_all(customers: pd.DataFrame, txns: pd.DataFrame, alerts: pd.DataFrame,
     with psycopg.connect(_conninfo()) as conn, conn.cursor() as cur:
         if reset:
             cur.execute("TRUNCATE audit_log, cases, alerts, transactions, customers CASCADE")
+            # case IDs restart at CASE-0001 and are the graph's thread IDs, so old checkpoints
+            # would attach to new cases
+            cur.execute("SELECT t FROM unnest(%s::text[]) t WHERE to_regclass(t) IS NOT NULL",
+                        (list(CHECKPOINT_TABLES),))
+            if existing := [r[0] for r in cur.fetchall()]:
+                cur.execute(f"TRUNCATE {', '.join(existing)}")
         else:
             cur.execute("SELECT count(*) FROM customers")
             if cur.fetchone()[0]:

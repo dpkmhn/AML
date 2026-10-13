@@ -8,9 +8,11 @@ info, 4 injection traps. Planted lines are pre-filled from labels.jsonl (first a
 scenario). Noise alerts have no ground truth: they are pre-filled as Close with
 `needs_review: true`, and data/out/golden_review.md shows what you need to label them.
 
-The hand-checked file differs from that draw: two noise alerts are labelled Needs more info
-(ALT-0008 undocumented jump in cash deposits, ALT-0095 unexplained high-risk transfer), so the
-final mix is 22 escalate, 26 close, 8 needs info, 4 traps.
+The hand-checked file differs from that draw: two noise alerts were labelled Needs more info
+(ALT-0008 undocumented jump in cash deposits, ALT-0095 unexplained high-risk transfer). In stage
+4.3 ALT-0008 was relabelled Escalate under escalation criterion 4 (structuring and funnel
+together, unexplained; reason in its notes), so the final mix is 23 escalate, 26 close, 7 needs
+info, 4 traps.
 """
 
 from __future__ import annotations

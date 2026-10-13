@@ -236,10 +236,11 @@ criteria. Both are now in code and in the policy text, and both routing modes we
 | rules-criteria | 0 | 53 of 60 | 0 | 0 of 4 | R7 fired once, R6 never (all 4 traps reach R1 first; R6 backs up weaker signals) |
 | exp-route-llm-v2 | 0 | 46 of 60 | 6 | 0 of 4 | was 41 and 13 with the old criterion 4; still reads criterion 1 more strictly than the code |
 
-**Label question:** the one R7 escalation is ALT-0008, hand-labelled Needs more info (an
-undocumented jump in cash deposits). Structuring and funnel both score 0.40 and neither is
-explained, so the written criterion 4 says escalate. Either the label or the 0.4 floor for R7
-should change; it is left as is until you decide.
+**ALT-0008 relabelled Escalate.** The one R7 escalation was ALT-0008, hand-labelled Needs more
+info (an undocumented jump in cash deposits). Structuring and funnel both score 0.40 and
+neither is explained, so the written criterion 4 says escalate; the label was changed to match
+the policy, with the reason in its notes. Runs from here on score 27 Escalate, 26 Close and
+7 Needs more info; earlier rows keep the labels they were scored with.
 
 **Rules vs LLM, after alignment:** both kept every escalation and every trap. Rules: 53 of 60,
 0 false escalations, $0.0024 per alert. LLM: 46 of 60, 6 false escalations, and it escalated 4

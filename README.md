@@ -23,6 +23,9 @@ the KYC notes, quoted it word for word, and named the two transactions it explai
 routing rules checked the quote and the coverage and recommended Close (rule R4). The analyst
 still decides: the decision form sits below, and an override needs a reason.
 
+The demo walks through three hard cases (a look-alike, a planted pass-through and an injection
+trap); [docs/demo.md](docs/demo.md) has the cases and the script.
+
 ## Architecture
 
 ```mermaid

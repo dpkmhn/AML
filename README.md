@@ -183,6 +183,9 @@ The copilot earns trust in stages and never gains the authority to close an aler
 
 The UI's queue already sorts recommended escalations first, which is phase 3's mechanism.
 
+Operating it after handover (what to monitor, the release gate, changing the model or a prompt,
+adding a typology, incidents and rollback) is in [docs/runbook.md](docs/runbook.md).
+
 | Area | Control |
 | --- | --- |
 | Audit | Every step stores its output, model, prompt version, tokens and latency; the decision stores the reviewer and any override reason |
